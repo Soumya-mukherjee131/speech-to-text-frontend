@@ -19,7 +19,7 @@ function App() {
     formData.append('file', file);
 
     try {
-      const response = await axios.post('http://localhost:5000/process-audio', formData, {
+      const response = await axios.post('https://speech-to-text-backend.onrender.com/process-audio', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
