@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import './App.css';
 
@@ -6,10 +6,8 @@ function App() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
   const [status, setStatus] = useState("");
-  const [progress, setProgress] = useState(0); // Progress bar state
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioURL, setAudioURL] = useState(null);
-  const mediaRecorder = useRef(null);
+  const [loading, setLoading] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -18,92 +16,106 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setStatus("Processing...");
-    setProgress(10);
+    setLoading(10);
 
     const formData = new FormData();
     formData.append('file', file);
 
     try {
+      setLoading(30);
       const response = await axios.post('https://speech-to-text-backend-2.onrender.com/process-audio', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        },
-        onUploadProgress: (progressEvent) => {
-          let percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setProgress(percentCompleted);
         }
       });
-
       setResult(response.data);
       setStatus("Processing complete!");
-      setProgress(100);
+      setLoading(100);
     } catch (error) {
       console.error("Error:", error.response ? error.response.data : error.message);
       setStatus("An error occurred: " + (error.response ? error.response.data.error : error.message));
-      setProgress(0);
+      setLoading(0);
     }
   };
 
-  const handleStartRecording = async () => {
-    setIsRecording(true);
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder.current = new MediaRecorder(stream);
-
-    const audioChunks = [];
-    mediaRecorder.current.ondataavailable = (event) => {
-      audioChunks.push(event.data);
-    };
-
-    mediaRecorder.current.onstop = () => {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      setAudioURL(audioUrl);
-      setFile(new File([audioBlob], 'recorded_audio.wav', { type: 'audio/wav' }));
-    };
-
-    mediaRecorder.current.start();
+  const handlePlayAudio = () => {
+    if (result && result.corrected_transcription) {
+      const speech = new SpeechSynthesisUtterance(result.corrected_transcription);
+      speech.lang = 'en-US';
+      speech.onstart = () => setIsPlaying(true);
+      speech.onend = () => setIsPlaying(false);
+      window.speechSynthesis.speak(speech);
+    }
   };
 
-  const handleStopRecording = () => {
-    setIsRecording(false);
-    mediaRecorder.current.stop();
+  const handleDownloadAudio = () => {
+    if (result && result.corrected_transcription) {
+      const synth = window.speechSynthesis;
+      const utterance = new SpeechSynthesisUtterance(result.corrected_transcription);
+      const audioContext = new AudioContext();
+      const destination = audioContext.createMediaStreamDestination();
+      const mediaRecorder = new MediaRecorder(destination.stream);
+
+      synth.speak(utterance);
+      const source = audioContext.createMediaStreamSource(destination.stream);
+      source.connect(audioContext.destination);
+
+      const audioChunks = [];
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const link = document.createElement('a');
+        link.href = audioUrl;
+        link.download = 'enhanced_transcription.wav';
+        link.click();
+      };
+
+      mediaRecorder.start();
+      utterance.onend = () => {
+        mediaRecorder.stop();
+      };
+    }
   };
 
   return (
     <div className="App">
       <h1>Speech Enhancer App</h1>
 
+      {/* File Upload Section */}
       <form onSubmit={handleSubmit} className="form-container">
         <input type="file" onChange={handleFileChange} className="file-input" />
         <button type="submit" className="submit-button">Upload and Process</button>
       </form>
 
-      {/* Recording Section */}
-      <div className="recording-section">
-        <button onClick={handleStartRecording} disabled={isRecording} className="record-button">Start Recording</button>
-        <button onClick={handleStopRecording} disabled={!isRecording} className="stop-button">Stop Recording</button>
-        {audioURL && <audio controls src={audioURL} className="audio-preview"></audio>}
-      </div>
+      {status && <p className="status">{status}</p>}
 
       {/* Progress Bar */}
-      {progress > 0 && (
-        <div className="progress-bar-container">
-          <div className="progress-bar" style={{ width: `${progress}%` }}>
-            {progress}%
-          </div>
+      {loading > 0 && (
+        <div className="progress-container">
+          <div className="progress-bar" style={{ width: `${loading}%` }}></div>
         </div>
       )}
 
-      {status && <p className="status">{status}</p>}
-
       {result && (
         <div className="results-container">
-
-          {/* Transcription Results */}
+          {/* Raw and Enhanced Transcription Section */}
           <div className="section">
             <h3 className="section-header">Transcription Results</h3>
             <p><strong>Raw Transcription:</strong> {result.raw_transcription}</p>
             <p><strong>Enhanced Transcription:</strong> {result.corrected_transcription}</p>
+          </div>
+
+          <div className="audio-controls">
+            <button onClick={handlePlayAudio} className="audio-button" disabled={isPlaying}>
+              {isPlaying ? 'Playing...' : 'Play Audio'}
+            </button>
+            <button onClick={handleDownloadAudio} className="audio-button">
+              Download Audio
+            </button>
           </div>
 
           <div className="separator"></div>
@@ -133,7 +145,7 @@ function App() {
 
           <div className="separator"></div>
 
-          {/* Enhanced Phonemes Table */}
+          {/* Enhanced Text Phonemes */}
           {result.enhanced_phoneme_data && (
             <div className="section">
               <h3 className="section-header">Enhanced Text Phonemes</h3>
