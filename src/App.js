@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
 
@@ -6,6 +6,11 @@ function App() {
   const [file, setFile] = useState(null);
   const [result, setResult] = useState(null);
   const [status, setStatus] = useState("");
+  const [progress, setProgress] = useState(0);
+  const [recording, setRecording] = useState(false);
+  const [audioURL, setAudioURL] = useState(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunks = useRef([]);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -13,15 +18,20 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatus("Processing...");
+    setStatus("");
+    setProgress(0);
 
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      const response = await axios.post('https://speech-to-text-backend-1.onrender.com/process-audio', formData, {
+      const response = await axios.post('https://speech-to-text-backend.onrender.com/process-audio', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setProgress(percentCompleted);
         }
       });
       setResult(response.data);
@@ -30,6 +40,35 @@ function App() {
       console.error("Error:", error.response ? error.response.data : error.message);
       setStatus("An error occurred: " + (error.response ? error.response.data.error : error.message));
     }
+  };
+
+  const startRecording = async () => {
+    setStatus("");
+    setResult(null);
+    setProgress(0);
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      mediaRecorderRef.current.ondataavailable = (e) => audioChunks.current.push(e.data);
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunks.current, { type: 'audio/wav' });
+        const audioURL = URL.createObjectURL(audioBlob);
+        setAudioURL(audioURL);
+        setFile(audioBlob);
+        audioChunks.current = [];
+      };
+      mediaRecorderRef.current.start();
+      setRecording(true);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      setStatus("Error accessing microphone: " + error.message);
+    }
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current.stop();
+    setRecording(false);
   };
 
   return (
@@ -42,82 +81,34 @@ function App() {
         <button type="submit" className="submit-button">Upload and Process</button>
       </form>
 
+      {/* Audio Recorder Section */}
+      <div className="audio-recorder">
+        {!recording ? (
+          <button onClick={startRecording} className="record-button">Start Recording</button>
+        ) : (
+          <button onClick={stopRecording} className="stop-button">Stop Recording</button>
+        )}
+        {audioURL && (
+          <audio controls src={audioURL} className="audio-player" />
+        )}
+      </div>
+
+      {/* Progress Bar */}
+      {progress > 0 && (
+        <div className="progress-bar-container">
+          <div className="progress-bar" style={{ width: `${progress}%` }}></div>
+        </div>
+      )}
+
+      {/* Status and Results */}
       {status && <p className="status">{status}</p>}
 
       {result && (
         <div className="results-container">
-          
-          {/* Raw and Enhanced Transcription Section */}
           <div className="section">
             <h3 className="section-header">Transcription Results</h3>
             <p><strong>Raw Transcription:</strong> {result.raw_transcription}</p>
             <p><strong>Enhanced Transcription:</strong> {result.corrected_transcription}</p>
-          </div>
-
-          <div className="separator"></div>
-
-          {/* First Table: Raw Text Phoneme Comparison */}
-          {result.phoneme_comparison_data && (
-            <div className="section">
-              <h3 className="section-header">Phoneme Comparison (Raw vs Corrected)</h3>
-              <table className="styled-table">
-                <thead>
-                  <tr>
-                    <th>Raw Word</th>
-                    <th>Raw Phonemes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.phoneme_comparison_data.map((item, index) => (
-                    <tr key={index}>
-                      <td>{item["Raw Word"]}</td>
-                      <td>{item["Raw Phonemes"]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="separator"></div>
-
-          {/* Second Table: Enhanced Text Phoneme Data */}
-          {result.enhanced_phoneme_data && (
-            <div className="section">
-              <h3 className="section-header">Enhanced Text Phonemes</h3>
-              <table className="styled-table">
-                <thead>
-                  <tr>
-                    <th>Enhanced Word</th>
-                    <th>Enhanced Phonemes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.enhanced_phoneme_data.map((item, index) => (
-                    <tr key={index}>
-                      <td>{item["Enhanced Word"]}</td>
-                      <td>{item["Enhanced Phonemes"]}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          <div className="separator"></div>
-
-          {/* Download Links */}
-          <div className="download-links">
-            {result.phoneme_comparison_csv && (
-              <a href={result.phoneme_comparison_csv} target="_blank" rel="noopener noreferrer" className="download-link">
-                Download Phoneme Comparison CSV
-              </a>
-            )}
-            {result.enhanced_phoneme_csv && (
-              <a href={result.enhanced_phoneme_csv} target="_blank" rel="noopener noreferrer" className="download-link">
-                Download Enhanced Phoneme CSV
-              </a>
-            )}
           </div>
         </div>
       )}

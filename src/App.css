@@ -132,3 +132,54 @@ h2, h3 {
   background-color: #ddd;
   margin: 20px 0;
 }
+.audio-recorder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.record-button, .stop-button {
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 10px;
+}
+
+.record-button:hover {
+  background-color: #c0392b;
+}
+
+.stop-button {
+  background-color: #27ae60;
+}
+
+.stop-button:hover {
+  background-color: #1e8449;
+}
+
+.audio-player {
+  width: 100%;
+  max-width: 500px;
+  margin-top: 10px;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 20px;
+  background-color: #f1f1f1;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 20px 0;
+}
+
+.progress-bar {
+  height: 100%;
+  background-color: #3498db;
+  transition: width 0.4s ease;
+}
