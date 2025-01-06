@@ -28,7 +28,7 @@ function App() {
 
     try {
       setLoading(30);
-      const response = await axios.post('https://speech-to-text-backend-2.onrender.com/process-audio', formData, {
+      const response = await axios.post('https://speech-to-text-backend.onrender.com/process-audio', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
