@@ -233,3 +233,29 @@ h2, h3 {
   display: block;
   margin: 20px auto;
 }
+.audio-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.audio-button {
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.audio-button:hover {
+  background-color: #2ecc71;
+}
+
+.audio-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
