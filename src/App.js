@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import './App.css';
 
@@ -8,6 +8,11 @@ function App() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const audioRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -19,7 +24,7 @@ function App() {
     setLoading(10);
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', file || audioBlob);
 
     try {
       setLoading(30);
@@ -38,6 +43,35 @@ function App() {
     }
   };
 
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      audioChunksRef.current = [];
+
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+        setAudioBlob(audioBlob);
+        const audioUrl = URL.createObjectURL(audioBlob);
+        audioRef.current.src = audioUrl;
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+    }
+  };
+
+  const handleStopRecording = () => {
+    mediaRecorderRef.current.stop();
+    setIsRecording(false);
+  };
+
   const handlePlayAudio = () => {
     if (result && result.corrected_transcription) {
       const speech = new SpeechSynthesisUtterance(result.corrected_transcription);
@@ -49,35 +83,11 @@ function App() {
   };
 
   const handleDownloadAudio = () => {
-    if (result && result.corrected_transcription) {
-      const synth = window.speechSynthesis;
-      const utterance = new SpeechSynthesisUtterance(result.corrected_transcription);
-      const audioContext = new AudioContext();
-      const destination = audioContext.createMediaStreamDestination();
-      const mediaRecorder = new MediaRecorder(destination.stream);
-
-      synth.speak(utterance);
-      const source = audioContext.createMediaStreamSource(destination.stream);
-      source.connect(audioContext.destination);
-
-      const audioChunks = [];
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunks.push(event.data);
-      };
-
-      mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const link = document.createElement('a');
-        link.href = audioUrl;
-        link.download = 'enhanced_transcription.wav';
-        link.click();
-      };
-
-      mediaRecorder.start();
-      utterance.onend = () => {
-        mediaRecorder.stop();
-      };
+    if (audioBlob) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(audioBlob);
+      link.download = 'recorded_audio.wav';
+      link.click();
     }
   };
 
@@ -90,6 +100,23 @@ function App() {
         <input type="file" onChange={handleFileChange} className="file-input" />
         <button type="submit" className="submit-button">Upload and Process</button>
       </form>
+
+      <div className="separator"></div>
+
+      {/* Microphone Recording Section */}
+      <div className="microphone-container">
+        {!isRecording ? (
+          <button onClick={handleStartRecording} className="microphone-button">Start Recording</button>
+        ) : (
+          <button onClick={handleStopRecording} className="microphone-button stop">Stop Recording</button>
+        )}
+        {audioBlob && (
+          <>
+            <audio ref={audioRef} controls className="audio-player" />
+            <button onClick={handleDownloadAudio} className="audio-button">Download Recorded Audio</button>
+          </>
+        )}
+      </div>
 
       {status && <p className="status">{status}</p>}
 
@@ -111,10 +138,7 @@ function App() {
 
           <div className="audio-controls">
             <button onClick={handlePlayAudio} className="audio-button" disabled={isPlaying}>
-              {isPlaying ? 'Playing...' : 'Play Audio'}
-            </button>
-            <button onClick={handleDownloadAudio} className="audio-button">
-              Download Audio
+              {isPlaying ? 'Playing...' : 'Play Enhanced Audio'}
             </button>
           </div>
 
@@ -167,22 +191,6 @@ function App() {
               </table>
             </div>
           )}
-
-          <div className="separator"></div>
-
-          {/* Download Links */}
-          <div className="download-links">
-            {result.phoneme_comparison_csv && (
-              <a href={result.phoneme_comparison_csv} target="_blank" rel="noopener noreferrer" className="download-link">
-                Download Phoneme Comparison CSV
-              </a>
-            )}
-            {result.enhanced_phoneme_csv && (
-              <a href={result.enhanced_phoneme_csv} target="_blank" rel="noopener noreferrer" className="download-link">
-                Download Enhanced Phoneme CSV
-              </a>
-            )}
-          </div>
         </div>
       )}
     </div>
