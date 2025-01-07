@@ -131,12 +131,12 @@ function App() {
         ) : (
           <button onClick={handleStopRecording} className="microphone-button stop">Stop Recording</button>
         )}
-        {/* {audioBlob && (
+        {/* {audioBlob && ( */}
           <>
-            <audio ref={audioRef} controls='true' className="audio-player" />
+            {/* <audio ref={audioRef} controls='true' className="audio-player" /> */}
             <button onClick={handleDownloadAudio} className="audio-button">Download Recorded Audio</button>
           </>
-        )} */}
+        {/* )} */}
       </div>
 
       {status && <p className="status">{status}</p>}
