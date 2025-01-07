@@ -81,6 +81,10 @@ function App() {
       window.speechSynthesis.speak(speech);
     }
   };
+  const handleStopAudio = () => {
+    window.speechSynthesis.cancel(); // Stop the audio
+    setIsPlaying(false); // Update the state
+  };
 
   const handleDownloadAudio = () => {
     if (audioBlob) {
@@ -158,13 +162,16 @@ function App() {
           </div>
 
           <div className="audio-controls">
-          <p>If you want to listen to the enhanced_audio transcription then click on the button.</p>
+          <p>If you want to listen to the enhanced_audio transcription then click Play.</p>
             <button onClick={handlePlayAudio} className="audio-button" disabled={isPlaying}>
               {isPlaying ? 'Playing...' : 'Play Enhanced Audio'}
             </button>
             {/* <p>If you want to download the enhanced_audio transcription then click on the button.</p>
             <button onClick={handleDownloadEnhancedAudio} className="audio-button">Download Enhanced Audio
             </button> */}
+            <button onClick={handleStopAudio} className="audio-button" disabled={!isPlaying}>
+            Stop Audio
+          </button>
           </div>
 
           <div className="separator"></div>
