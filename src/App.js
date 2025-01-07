@@ -90,6 +90,14 @@ function App() {
       link.click();
     }
   };
+  const handleDownloadEnhancedAudio = () => {
+    if (audioBlob) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(audioBlob);
+      link.download = 'enhanced_audio.wav';
+      link.click();
+    }
+  };
 
   return (
     <div className="App">
@@ -139,6 +147,8 @@ function App() {
           <div className="audio-controls">
             <button onClick={handlePlayAudio} className="audio-button" disabled={isPlaying}>
               {isPlaying ? 'Playing...' : 'Play Enhanced Audio'}
+            </button>
+            <button onClick={handleDownloadEnhancedAudio} className="audio-button">Download Enhanced Audio
             </button>
           </div>
 
