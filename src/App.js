@@ -90,14 +90,27 @@ function App() {
       link.click();
     }
   };
-  const handleDownloadEnhancedAudio = () => {
-    if (audioBlob) {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(audioBlob);
-      link.download = 'enhanced_audio.wav';
-      link.click();
+  const handleDownloadEnhancedAudio = async () => {
+    if (result && result.corrected_transcription) {
+      try {
+        const response = await axios.post(
+          'https://speech-to-text-backend.onrender.com/generate-audio',
+          { text: result.corrected_transcription },
+          { responseType: 'blob' } // Important to handle binary data
+        );
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', 'enhanced_audio.mp3');
+        document.body.appendChild(link);
+        link.click();
+      } catch (error) {
+        console.error("Error downloading enhanced audio:", error);
+      }
     }
   };
+  
+  
 
   return (
     <div className="App">
@@ -145,9 +158,11 @@ function App() {
           </div>
 
           <div className="audio-controls">
+          <p>If you want to listen to the enhanced_audio transcription then click on the button.</p>
             <button onClick={handlePlayAudio} className="audio-button" disabled={isPlaying}>
               {isPlaying ? 'Playing...' : 'Play Enhanced Audio'}
             </button>
+            <p>If you want to download the enhanced_audio transcription then click on the button.</p>
             <button onClick={handleDownloadEnhancedAudio} className="audio-button">Download Enhanced Audio
             </button>
           </div>
@@ -201,6 +216,21 @@ function App() {
               </table>
             </div>
           )}
+          <div className="separator"></div>
+
+          {/* Download Links */}
+          <div className="download-links">
+            {result.phoneme_comparison_csv && (
+              <a href={result.phoneme_comparison_csv} target="_blank" rel="noopener noreferrer" className="download-link">
+                Download Phoneme Comparison CSV
+              </a>
+            )}
+            {result.enhanced_phoneme_csv && (
+              <a href={result.enhanced_phoneme_csv} target="_blank" rel="noopener noreferrer" className="download-link">
+                Download Enhanced Phoneme CSV
+              </a>
+            )}
+          </div>
         </div>
       )}
     </div>
