@@ -90,25 +90,25 @@ function App() {
       link.click();
     }
   };
-  const handleDownloadEnhancedAudio = async () => {
-    if (result && result.corrected_transcription) {
-      try {
-        const response = await axios.post(
-          'https://speech-to-text-backend.onrender.com/generate-audio',
-          { text: result.corrected_transcription },
-          { responseType: 'blob' } // Important to handle binary data
-        );
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'enhanced_audio.mp3');
-        document.body.appendChild(link);
-        link.click();
-      } catch (error) {
-        console.error("Error downloading enhanced audio:", error);
-      }
-    }
-  };
+  // const handleDownloadEnhancedAudio = async () => {
+  //   if (result && result.corrected_transcription) {
+  //     try {
+  //       const response = await axios.post(
+  //         'https://speech-to-text-backend.onrender.com/generate-audio',
+  //         { text: result.corrected_transcription },
+  //         { responseType: 'blob' } // Important to handle binary data
+  //       );
+  //       const url = window.URL.createObjectURL(new Blob([response.data]));
+  //       const link = document.createElement('a');
+  //       link.href = url;
+  //       link.setAttribute('download', 'enhanced_audio.mp3');
+  //       document.body.appendChild(link);
+  //       link.click();
+  //     } catch (error) {
+  //       console.error("Error downloading enhanced audio:", error);
+  //     }
+  //   }
+  // };
   
   
 
@@ -131,12 +131,12 @@ function App() {
         ) : (
           <button onClick={handleStopRecording} className="microphone-button stop">Stop Recording</button>
         )}
-        {audioBlob && (
+        {/* {audioBlob && (
           <>
-            <audio ref={audioRef} controls className="audio-player" />
+            <audio ref={audioRef} controls='true' className="audio-player" />
             <button onClick={handleDownloadAudio} className="audio-button">Download Recorded Audio</button>
           </>
-        )}
+        )} */}
       </div>
 
       {status && <p className="status">{status}</p>}
@@ -162,9 +162,9 @@ function App() {
             <button onClick={handlePlayAudio} className="audio-button" disabled={isPlaying}>
               {isPlaying ? 'Playing...' : 'Play Enhanced Audio'}
             </button>
-            <p>If you want to download the enhanced_audio transcription then click on the button.</p>
+            {/* <p>If you want to download the enhanced_audio transcription then click on the button.</p>
             <button onClick={handleDownloadEnhancedAudio} className="audio-button">Download Enhanced Audio
-            </button>
+            </button> */}
           </div>
 
           <div className="separator"></div>
