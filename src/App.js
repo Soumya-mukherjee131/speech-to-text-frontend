@@ -8,11 +8,11 @@ function App() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
+  // const [isRecording, setIsRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
-  const audioRef = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  // const audioRef = useRef(null);
+  // const mediaRecorderRef = useRef(null);
+  // const audioChunksRef = useRef([]);
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -43,34 +43,34 @@ function App() {
     }
   };
 
-  const handleStartRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      audioChunksRef.current = [];
+  // const handleStartRecording = async () => {
+  //   try {
+  //     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  //     mediaRecorderRef.current = new MediaRecorder(stream);
+  //     audioChunksRef.current = [];
 
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
-      };
+  //     mediaRecorderRef.current.ondataavailable = (event) => {
+  //       audioChunksRef.current.push(event.data);
+  //     };
 
-      mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-        setAudioBlob(audioBlob);
-        const audioUrl = URL.createObjectURL(audioBlob);
-        audioRef.current.src = audioUrl;
-      };
+  //     mediaRecorderRef.current.onstop = () => {
+  //       const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
+  //       setAudioBlob(audioBlob);
+  //       const audioUrl = URL.createObjectURL(audioBlob);
+  //       audioRef.current.src = audioUrl;
+  //     };
 
-      mediaRecorderRef.current.start();
-      setIsRecording(true);
-    } catch (err) {
-      console.error("Error accessing microphone:", err);
-    }
-  };
+  //     mediaRecorderRef.current.start();
+  //     setIsRecording(true);
+  //   } catch (err) {
+  //     console.error("Error accessing microphone:", err);
+  //   }
+  // };
 
-  const handleStopRecording = () => {
-    mediaRecorderRef.current.stop();
-    setIsRecording(false);
-  };
+  // const handleStopRecording = () => {
+  //   mediaRecorderRef.current.stop();
+  //   setIsRecording(false);
+  // };
 
   const handlePlayAudio = () => {
     if (result && result.corrected_transcription) {
@@ -86,14 +86,14 @@ function App() {
     setIsPlaying(false); // Update the state
   };
 
-  const handleDownloadAudio = () => {
-    if (audioBlob) {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(audioBlob);
-      link.download = 'recorded_audio.wav';
-      link.click();
-    }
-  };
+  // const handleDownloadAudio = () => {
+  //   if (audioBlob) {
+  //     const link = document.createElement('a');
+  //     link.href = URL.createObjectURL(audioBlob);
+  //     link.download = 'recorded_audio.wav';
+  //     link.click();
+  //   }
+  // };
   // const handleDownloadEnhancedAudio = async () => {
   //   if (result && result.corrected_transcription) {
   //     try {
@@ -129,7 +129,7 @@ function App() {
       <div className="separator"></div>
 
       {/* Microphone Recording Section */}
-      <div className="microphone-container">
+      {/* <div className="microphone-container">
         {!isRecording ? (
           <button onClick={handleStartRecording} className="microphone-button">Start Recording</button>
         ) : (
@@ -137,11 +137,11 @@ function App() {
         )}
         {audioBlob && (
           <>
-            {/* <audio ref={audioRef} controls='true' className="audio-player" /> */}
+             <audio ref={audioRef} controls='true' className="audio-player" /> 
             <button onClick={handleDownloadAudio} className="audio-button">Download Recorded Audio</button>
           </>
          )} 
-      </div>
+      </div> */}
 
       {status && <p className="status">{status}</p>}
 
